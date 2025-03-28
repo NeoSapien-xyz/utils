@@ -1,6 +1,6 @@
 # gcp.py
-
 from google.cloud import storage
+from datetime import datetime
 
 BUCKET_NAME = "neosapien_stagging"
 CHUNK_EXTENSION = ".raw"
@@ -34,15 +34,20 @@ def analyze_user_chunks(user_id):
         total_size = sum(blob.size for blob in chunks)
         avg_chunk_size = total_size / len(chunks) if chunks else 0
         estimated_duration = (total_size * BITS_PER_BYTE) / (BITRATE_KBPS * 1000)
+        smallest_chunk = min(chunks, key=lambda x: x.size).size if chunks else 0
+        largest_chunk = max(chunks, key=lambda x: x.size).size if chunks else 0
+
+        created_at_str = info["created_at"].astimezone().strftime("%d-%m-%Y %H:%M:%S")
 
         results.append({
             "memory_id": memory_id,
-            "created_at": info["created_at"].isoformat(),
+            "created_at": created_at_str,
             "chunk_count": len(chunks),
             "total_size_kb": total_size / 1024,
             "avg_chunk_size_kb": avg_chunk_size / 1024,
-            "estimated_duration_sec": estimated_duration
+            "estimated_duration_sec": estimated_duration,
+            "smallest_chunk_kb": smallest_chunk / 1024,
+            "largest_chunk_kb": largest_chunk / 1024
         })
 
     return results
-
