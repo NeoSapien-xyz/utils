@@ -1,11 +1,28 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="max-w-2xl mx-auto mt-10 bg-white p-6 rounded shadow">
-    <h2 class="text-2xl font-bold mb-4">Chunk Loss Checker</h2>
-    <form method="post" action="/chunk_loss/">
-        <label class="block mb-2">Enter user IDs (comma-separated):</label>
-        <textarea name="user_ids" rows="3" class="w-full p-2 border"></textarea>
-        <button type="submit" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded">Run Check</button>
-    </form>
+  <h2 class="text-2xl font-bold mb-4">Chunk Loss Checker</h2>
+
+  <!-- 🔁 Form -->
+  <form id="chunkForm" method="post" action="/chunk_loss/">
+    <label class="block mb-2">Enter user IDs (comma-separated):</label>
+    <textarea name="user_ids" rows="3" class="w-full p-2 border rounded"></textarea>
+    <button type="submit" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">Run Check</button>
+  </form>
+
+  <!-- ⏳ Loader -->
+  <div id="loader" class="hidden text-center mt-6">
+    <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+    <p class="mt-2 text-gray-600">Crunching chunks... hang tight!</p>
+  </div>
 </div>
+
+<!-- 🧠 Inline JS -->
+<script>
+  document.getElementById('chunkForm').addEventListener('submit', function () {
+    document.getElementById('chunkForm').classList.add('hidden');
+    document.getElementById('loader').classList.remove('hidden');
+  });
+</script>
 {% endblock %}
+
