@@ -1,2 +1,9 @@
 __pycache__/
 clipboard
+firebase.json
+gcp.json
+firebase*.json
+FIRE_CREDS.json
+FIRE_*
+GCP_CREDS.json
+

@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-xl mx-auto mt-10 bg-white p-6 rounded shadow">
+    <h2 class="text-xl font-semibold mb-4">Run Chunk Loss for ALL users?</h2>
+    <p class="mb-4">You didn't enter any user IDs. This will process <strong>every user on Firestore</strong>. Continue?</p>
+    <form method="post" action="/chunk_loss/">
+        <input type="hidden" name="confirm_all" value="true">
+        <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded">Yes, Run for All Users</button>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>FredisBlob</title>
+<!-- app/templates/base.html -->
+  <meta charset="UTF-8">
+  <script src="https://cdn.tailwindcss.com"></script>
+
+</head>
+<body class="bg-gray-100 font-sans">
+    <nav class="bg-white p-4 shadow mb-4">
+        <div class="max-w-4xl mx-auto flex justify-between">
+            <div class="text-2xl font-bold text-blue-600">FredisBlob</div>
+            <div class="space-x-4">
+                <a href="/" class="text-gray-700 hover:underline">Home</a>
+                <a href="/transcript" class="text-gray-700 hover:underline">Transcript Viewer</a>
+                <a href="/chunk_count" class="text-gray-700 hover:underline">Chunk Counter</a>
+            </div>
+        </div>
+    </nav>
+    <main class="max-w-4xl mx-auto">
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>
+

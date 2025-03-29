@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-6xl mx-auto p-6">
+    <h1 class="text-3xl font-bold mb-6">Chunk Loss Report</h1>
+
+    {% for user in users %}
+    <div class="mb-8">
+        <h2 class="text-xl font-semibold">User: {{ user.user_id }}</h2>
+        <table class="table-auto w-full mt-2 text-sm border">
+            <thead class="bg-gray-100">
+                <tr>
+                    <th class="px-2 py-1 border">Memory ID</th>
+                    <th class="px-2 py-1 border">Timestamp</th>
+                    <th class="px-2 py-1 border">Firestore Duration (s)</th>
+                    <th class="px-2 py-1 border">Audio Duration (s)</th>
+                    <th class="px-2 py-1 border">Chunk Loss (s)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for mem in user.memories %}
+                <tr class="odd:bg-gray-50">
+                    <td class="border px-2 py-1">{{ mem.memory_id }}</td>
+                    <td class="border px-2 py-1 text-xs text-gray-600">{{ mem.started_at_str }}</td>
+                    <td class="border px-2 py-1">
+                        {% if mem.fs_duration is none %}—{% else %}{{ mem.fs_duration }}{% endif %}
+                    </td>
+                    <td class="border px-2 py-1">
+                        {% if mem.audio_duration is none %}—{% else %}{{ mem.audio_duration }}{% endif %}
+                    </td>
+                    <td class="border px-2 py-1 {% if mem.loss is none %}text-gray-400{% elif mem.loss > 1 %}text-red-500{% endif %}">
+                        {% if mem.loss is none %}—{% else %}{{ mem.loss }}{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <p class="mt-2 text-sm text-gray-600">Total loss: {{ user.total_loss }}s | Avg loss: {{ user.avg_loss }}s/memory</p>
+    </div>
+    {% endfor %}
+
+    <div class="mt-10">
+        <h2 class="text-xl font-semibold">Missing in GCS</h2>
+        {% for uid, mid in missing_in_gcs %}
+            <p>{{ uid }} → {{ mid }}</p>
+        {% endfor %}
+    </div>
+
+    <div class="mt-6">
+        <h2 class="text-xl font-semibold">Missing in Firestore</h2>
+        {% for uid, mid in missing_in_fs %}
+            <p>{{ uid }} → {{ mid }}</p>
+        {% endfor %}
+    </div>
+
+    <div class="mt-6 text-lg font-semibold">
+        Overall Average Chunk Loss: {{ overall_avg }} seconds
+    </div>
+</div>
+{% endblock %}
+
