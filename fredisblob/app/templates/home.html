@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="max-w-xl mx-auto mt-10">
-  <h1 class="text-2xl font-bold mb-6">Welcome to FredisBlob</h1>
-  
+  <h1 class="text-2xl font-bold mb-6 text-center">Welcome to FredisBlob</h1>
+
   <div class="space-y-4">
-    <a href="/transcript" class="block px-4 py-2 bg-blue-600 text-white rounded shadow">Transcript Viewer</a>
-    <a href="/chunk_loss" class="block px-4 py-2 bg-green-600 text-white rounded shadow">Chunk Loss Checker</a>
+    <a href="/transcript" class="block px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700 transition">Transcript Viewer</a>
+    <a href="/chunk_loss" class="block px-4 py-2 bg-green-600 text-white rounded shadow hover:bg-green-700 transition">Chunk Loss Checker</a>
+    <a href="/chunks_export" class="block px-4 py-2 bg-purple-600 text-white rounded shadow hover:bg-purple-700 transition">Chunks Exporter</a>
   </div>
 </div>
 {% endblock %}
-

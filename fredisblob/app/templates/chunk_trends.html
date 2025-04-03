@@ -1,0 +1,75 @@
+{% if debug %}
+  <div class="max-w-6xl mx-auto mt-10 bg-white p-6 rounded shadow">
+    <h2 class="text-2xl font-bold mb-4">📦 Raw Chunk Trend Debug JSON</h2>
+    <pre class="bg-gray-100 text-xs p-4 overflow-x-auto border border-gray-300 rounded">
+{{ daily_user_memory_map | tojson(indent=2) }}
+    </pre>
+  </div>
+{% else %}
+  <div class="max-w-6xl mx-auto mt-10 p-6 bg-white rounded shadow">
+    <h2 class="text-3xl font-bold mb-6">📈 Chunk Loss Trends</h2>
+    <canvas id="trendChart" height="100"></canvas>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    const ctx = document.getElementById('trendChart').getContext('2d');
+    const perUserTrends = JSON.parse('{{ per_user_trends | tojson }}');
+
+
+    const allDates = new Set();
+    const datasets = [];
+    const colors = ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#14b8a6', '#f43f5e'];
+    let colorIndex = 0;
+
+    for (const [userId, trend] of Object.entries(perUserTrends)) {
+      const data = trend.map(entry => entry.avg_loss_pct);
+      const labels = trend.map(entry => entry.date);
+      const tips = trend.map(entry => entry.tooltip || `${entry.avg_loss_pct}%`);
+      labels.forEach(d => allDates.add(d));
+      datasets.push({
+        label: userId,
+        data,
+        fill: false,
+        borderColor: colors[colorIndex % colors.length],
+        tension: 0.3,
+        customTooltips: tips
+      });
+      colorIndex++;
+    }
+
+    const sortedDates = Array.from(allDates).sort();
+
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: sortedDates,
+        datasets: datasets
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function(ctx) {
+                const ds = ctx.dataset;
+                return ds.customTooltips ? ds.customTooltips[ctx.dataIndex] : `${ctx.dataset.label}: ${ctx.raw}%`;
+              }
+            }
+          },
+          legend: { display: true }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            min: -105,
+            title: { display: true, text: 'Chunk Loss (%)' }
+          },
+          x: {
+            title: { display: true, text: 'Date' }
+          }
+        }
+      }
+    });
+  </script>
+{% endif %}

@@ -1,0 +1,21 @@
+<div class="max-w-xl mx-auto mt-10 bg-white p-6 rounded shadow">
+  <h1 class="text-2xl font-bold mb-4">Chunk Trends</h1>
+  <form method="post" action="/chunk_trends" onsubmit="showLoader()">
+    <label class="block mb-2 text-sm font-medium">User IDs (comma-separated)</label>
+    <input type="text" name="user_ids" class="border rounded p-2 w-full mb-4" />
+
+    <label class="inline-flex items-center mb-4">
+      <input type="checkbox" name="debug" class="mr-2">
+      Debug Mode (show JSON instead of chart)
+    </label>
+
+    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Submit</button>
+  </form>
+  <div id="loadingSpinner" class="hidden mt-6 text-blue-700 font-semibold text-center">🔄 Crunching Chunks...</div>
+</div>
+
+<script>
+  function showLoader() {
+    document.getElementById("loadingSpinner").classList.remove("hidden");
+  }
+</script>

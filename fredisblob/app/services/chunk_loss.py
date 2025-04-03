@@ -26,7 +26,6 @@ def analyze_chunk_loss(user_ids):
             mem_docs = mems_ref.stream()
             mem_ids_fs = {}
             user_total_loss = 0
-            mem_stats = {}
 
             # First: process Firestore memories
             for doc in mem_docs:
@@ -54,12 +53,13 @@ def analyze_chunk_loss(user_ids):
                         "fs_duration": round(fs_duration, 2),
                         "audio_duration": None,
                         "loss": None,
+                        "loss_pct": None,
                         "started_at": start_ts,
                         "started_at_str": fs_started_at.strftime("%Y-%m-%d %H:%M:%S"),
                         "has_fs": True,
                         "has_gcs": False
                     }
-                except Exception as mem_err:
+                except Exception:
                     continue
 
             # Second: process GCS memory chunks
@@ -94,12 +94,15 @@ def analyze_chunk_loss(user_ids):
                 if mem_id in mem_ids_fs:
                     entry = mem_ids_fs[mem_id]
                     chunk_loss = entry["fs_duration"] - audio_duration
+                    loss_pct = (chunk_loss / entry["fs_duration"]) * 100 if entry["fs_duration"] > 0 else 0
                     entry.update({
                         "audio_duration": round(audio_duration, 2),
                         "loss": round(chunk_loss, 2),
+                        "loss_pct": round(loss_pct, 2),
                         "has_gcs": True,
                         "started_at": gcs_started_at,
-                        "started_at_str": gcs_started_str
+                        "started_at_str": gcs_started_str,
+                        "tooltip": f"Loss: {round(chunk_loss, 2)}s of {round(entry['fs_duration'], 2)}s → {round(loss_pct, 2)}%"
                     })
                 else:
                     missing_in_fs.append((uid, mem_id))
@@ -108,6 +111,7 @@ def analyze_chunk_loss(user_ids):
                         "fs_duration": None,
                         "audio_duration": round(audio_duration, 2),
                         "loss": None,
+                        "loss_pct": None,
                         "started_at": gcs_started_at,
                         "started_at_str": gcs_started_str,
                         "has_fs": False,
@@ -122,6 +126,11 @@ def analyze_chunk_loss(user_ids):
             total_loss = sum(entry["loss"] for entry in sorted_memories if isinstance(entry["loss"], (float, int)))
             valid_loss_entries = [m for m in sorted_memories if isinstance(m["loss"], (float, int))]
             avg_loss = total_loss / len(valid_loss_entries) if valid_loss_entries else 0
+
+            print(f"sorted memories are {sorted_memories}")
+            print(f"total loss {total_loss}")
+            print(f"valid loss entries {valid_loss_entries}")
+            print(f"{avg_loss=}")
 
             result.append({
                 "user_id": uid,
@@ -148,3 +157,4 @@ def analyze_chunk_loss(user_ids):
         "missing_in_fs": missing_in_fs,
         "overall_avg": round(overall_avg, 2)
     }
+

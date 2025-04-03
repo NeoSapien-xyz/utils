@@ -1,0 +1,18 @@
+
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-xl mx-auto mt-10 bg-white p-6 rounded shadow">
+  <h1 class="text-2xl font-bold mb-4">Chunks Exporter</h1>
+  <form method="post" action="/chunks_export">
+    <label class="block mb-2 text-sm font-medium">User IDs (comma-separated)</label>
+    <input type="text" name="user_ids" class="border rounded p-2 w-full mb-4" />
+
+    <label class="inline-flex items-center mb-4">
+      <input type="checkbox" name="all_users" class="mr-2">
+      Run for all users
+    </label>
+
+    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Export CSV</button>
+  </form>
+</div>
+{% endblock %}
