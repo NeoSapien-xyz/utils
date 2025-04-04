@@ -1,0 +1,25 @@
+# Bytecode
+__pycache__/
+*.py[cod]
+
+
+# Secrets
+secrets/
+*.key
+*.pem
+*.json
+
+# VSCode/IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Logs
+*.log
+
+# Docker artifacts
+*.db
+*.sqlite
+
