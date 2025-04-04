@@ -127,9 +127,9 @@ def analyze_chunk_loss(user_ids):
             valid_loss_entries = [m for m in sorted_memories if isinstance(m["loss"], (float, int))]
             avg_loss = total_loss / len(valid_loss_entries) if valid_loss_entries else 0
 
-            print(f"sorted memories are {sorted_memories}")
+            print(f"no of sorted memories are: {len(sorted_memories)}")
             print(f"total loss {total_loss}")
-            print(f"valid loss entries {valid_loss_entries}")
+            print(f"total valid loss entries: {len(valid_loss_entries)}")
             print(f"{avg_loss=}")
 
             result.append({
