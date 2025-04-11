@@ -48,25 +48,36 @@ async def fetch_user_memories(
             return {"memories": [memory_data], "total": 1}
         return {"memories": [], "total": 0}
 
+    # Order by created_at only to avoid index requirements
     query = col_ref.order_by("created_at", direction=firestore.Query.DESCENDING)
-    print("created at desc order by done")
-    if started_at:
-        query = query.where("started_at", ">=", started_at)
-    if finished_at:
-        query = query.where("started_at", "<=", finished_at)
+    docs = list(query.stream())
 
-    all_docs = list(query.stream())
-    total = len(all_docs)
+    # Filter started_at and finished_at manually in-memory
+    filtered_docs = []
+    for doc in docs:
+        data = doc.to_dict()
+        start = data.get("started_at")
+        end = data.get("finished_at")
 
+        start_ms = int(start.timestamp() * 1000) if isinstance(start, DatetimeWithNanoseconds) else start
+        end_ms = int(end.timestamp() * 1000) if isinstance(end, DatetimeWithNanoseconds) else end
+
+        if started_at and (not start_ms or start_ms < started_at):
+            continue
+        if finished_at and (not end_ms or end_ms > finished_at):
+            continue
+        filtered_docs.append(doc)
+
+    total = len(filtered_docs)
     skip_count = (page - 1) * page_size
-    paginated_docs = all_docs[skip_count: skip_count + page_size]
+    paginated_docs = filtered_docs[skip_count: skip_count + page_size]
 
-    print(f"[DEBUG] Total docs: {total}, returning {len(paginated_docs)} from offset {skip_count}")
+    print(f"[DEBUG] Filtered total: {total}, returning {len(paginated_docs)} from offset {skip_count}")
 
     results = [
         {
-            **_convert_datetime_fields(doc.to_dict()), 
-            "memory_id": doc.id, 
+            **_convert_datetime_fields(doc.to_dict()),
+            "memory_id": doc.id,
             "archived": doc.to_dict().get("archived", False)
         }
         for doc in paginated_docs
@@ -82,12 +93,12 @@ async def fetch_user_memories(
     }
 
 
+
 async def get_memory_json(user_id: str, memory_id: str):
     doc_ref = db.collection("users").document(user_id).collection("memories").document(memory_id)
     doc = doc_ref.get()
     if not doc.exists:
         raise Exception(f"Memory {memory_id} not found.")
-    
     memory_data = _convert_datetime_fields(doc.to_dict())
     memory_data["memory_id"] = doc.id
     memory_data["archived"] = doc.to_dict().get("archived", False)
