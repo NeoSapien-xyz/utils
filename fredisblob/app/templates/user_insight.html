@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>User Insight</h2>
+<form id="insightForm">
+  <input type="text" name="user_id" placeholder="User ID" required />
+  <input type="text" name="memory_id" placeholder="(Optional) Memory ID" />
+  <input type="number" name="started_at" placeholder="(Optional) Started At Epoch" />
+  <input type="number" name="finished_at" placeholder="(Optional) Finished At Epoch" />
+  <button type="submit">Fetch</button>
+</form>
+
+<div class="mt-6">
+    <table class="w-full text-left border border-gray-300 rounded shadow">
+      <thead class="bg-gray-100">
+        <tr>
+          <th class="p-2 border-b">Memory ID</th>
+          <th class="p-2 border-b">Started At</th>
+          <th class="p-2 border-b">Finished At</th>
+          <th class="p-2 border-b">Duration (sec)</th>
+          <th class="p-2 border-b">Download</th>
+        </tr>
+      </thead>
+      <tbody id="results" class="bg-white">
+        <!-- JS will populate rows here -->
+      </tbody>
+    </table>
+  </div>
+  
+  <script>
+  function formatEpoch(epoch) {
+    if (!epoch) return "-";
+    const d = new Date(Number(epoch));
+    return d.toLocaleString();
+  }
+  
+  document.getElementById("insightForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const form = new FormData(e.target);
+    const params = new URLSearchParams();
+  
+    for (const [key, value] of form.entries()) {
+      if (value.trim() !== "") {
+        params.append(key, value);
+      }
+    }
+  
+    const res = await fetch(`/user_insight/data?${params}`);
+    const data = await res.json();
+    const user_id = form.get("user_id");
+  
+    const rows = data.memories.map(m => {
+    const created = m.created_at || 0;
+    const started = m.started_at || 0;
+    const finished = m.finished_at || 0;
+    const duration = finished && started ? ((finished - started) / 1000).toFixed(1) : "-";
+
+    return `
+        <tr>
+        <td class="p-2 border-b">${m.memory_id || "-"}</td>
+        <td class="p-2 border-b">${formatEpoch(created)}</td>
+        <td class="p-2 border-b">${formatEpoch(started)}</td>
+        <td class="p-2 border-b">${formatEpoch(finished)}</td>
+        <td class="p-2 border-b">${duration}</td>
+        <td class="p-2 border-b">
+            <a href="/user_insight/download_memory/${user_id}/${m.memory_id}" class="text-blue-600 hover:underline" target="_blank">Download JSON</a>
+        </td>
+        </tr>
+    `;
+    });
+
+  
+    document.getElementById("results").innerHTML = rows.join("");
+  });
+  </script>
+  
+{% endblock %}
+
