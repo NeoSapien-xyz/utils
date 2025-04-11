@@ -41,3 +41,13 @@ async def download_memory_json(user_id: str, memory_id: str):
         "Content-Disposition": f"attachment; filename={memory_id}.json"
     })
 
+from app.services.gcp_audio_service import download_and_merge_chunks
+
+@router.get("/user_insight/download_audio/{user_id}/{memory_id}")
+async def download_audio(user_id: str, memory_id: str, vad: bool = False):
+    wav_path = download_and_merge_chunks(user_id, memory_id, vad=vad)
+    file_name = f"{memory_id}_{'vad' if vad else 'novad'}.wav"
+    return StreamingResponse(open(wav_path, "rb"), media_type="audio/wav", headers={
+        "Content-Disposition": f"attachment; filename={file_name}"
+    })
+

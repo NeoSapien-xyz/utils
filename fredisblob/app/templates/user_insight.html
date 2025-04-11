@@ -23,6 +23,7 @@
           <th class="p-2 border-b">Started At</th>
           <th class="p-2 border-b">Finished At</th>
           <th class="p-2 border-b">Duration (sec)</th>
+          <th class="p-2 border-b">Archived</th>
           <th class="p-2 border-b">Download</th>
         </tr>
       </thead>
@@ -58,32 +59,36 @@ async function fetchPage(page = 1) {
 
   document.querySelector("input[name='page']").value = currentPage;
 
-  const results = document.getElementById("results");
-  if (!data.memories || data.memories.length === 0) {
-    results.innerHTML = "<tr><td colspan='6' class='p-2 text-center text-gray-500'>No memories found.</td></tr>";
-    return;
-  }
-
-  const rows = data.memories.map(m => {
+    const results = document.getElementById("results");
+    if (!data.memories || data.memories.length === 0) {
+        results.innerHTML = "<tr><td colspan='6' class='p-2 text-center text-gray-500'>No memories found.</td></tr>";
+        return;
+    }
+    
+    const rows = data.memories.map(m => {
     const started = m.started_at || 0;
     const finished = m.finished_at || 0;
     const duration = finished && started ? ((finished - started) / 1000).toFixed(1) : "-";
     const memoryId = m.memory_id || m.id || "-";
     const createdAt = m.created_at || 0;
+    const archived = m.archived || false;
 
     return `
-      <tr>
+        <tr>
         <td class="p-2 border-b">${memoryId}</td>
         <td class="p-2 border-b">${formatEpoch(createdAt)}</td>
         <td class="p-2 border-b">${formatEpoch(started)}</td>
         <td class="p-2 border-b">${formatEpoch(finished)}</td>
         <td class="p-2 border-b">${duration}</td>
+        <td class="p-2 border-b">${archived}</td>
         <td class="p-2 border-b">
-          <a href="/user_insight/download_memory/${user_id}/${memoryId}" class="text-blue-600 hover:underline" target="_blank">Download JSON</a>
+            <a href="/user_insight/download_memory/${user_id}/${memoryId}" class="text-blue-600 hover:underline" target="_blank">JSON</a>
+            <a href="/user_insight/download_audio/${user_id}/${memoryId}?vad=false" class="text-green-600 hover:underline ml-2" target="_blank">WAV</a>
+            <a href="/user_insight/download_audio/${user_id}/${memoryId}?vad=true" class="text-yellow-600 hover:underline ml-2" target="_blank">WAV (VAD)</a>
         </td>
-      </tr>
+        </tr>
     `;
-  });
+    });
 
   results.innerHTML = rows.join("");
   document.getElementById("nextBtn").disabled = !data.has_next;

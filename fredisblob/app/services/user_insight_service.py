@@ -61,7 +61,11 @@ async def fetch_user_memories(
     print(f"[DEBUG] Total docs: {total}, returning {len(paginated_docs)} from offset {skip_count}")
 
     results = [
-        {**_convert_datetime_fields(doc.to_dict()), "memory_id": doc.id}
+        {
+            **_convert_datetime_fields(doc.to_dict()), 
+            "memory_id": doc.id, 
+            "archived": doc.to_dict().get("archived", False)
+        }
         for doc in paginated_docs
     ]
 
