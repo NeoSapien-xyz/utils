@@ -42,11 +42,14 @@ async def fetch_user_memories(
     if memory_id:
         doc = col_ref.document(memory_id).get()
         if doc.exists:
-            return {"memories": [_convert_datetime_fields(doc.to_dict())], "total": 1}
+            memory_data = _convert_datetime_fields(doc.to_dict())
+            memory_data["memory_id"] = doc.id
+            memory_data["archived"] = doc.to_dict().get("archived", False)
+            return {"memories": [memory_data], "total": 1}
         return {"memories": [], "total": 0}
 
     query = col_ref.order_by("created_at", direction=firestore.Query.DESCENDING)
-
+    print("created at desc order by done")
     if started_at:
         query = query.where("started_at", ">=", started_at)
     if finished_at:
@@ -84,4 +87,8 @@ async def get_memory_json(user_id: str, memory_id: str):
     doc = doc_ref.get()
     if not doc.exists:
         raise Exception(f"Memory {memory_id} not found.")
-    return _convert_datetime_fields(doc.to_dict())
+    
+    memory_data = _convert_datetime_fields(doc.to_dict())
+    memory_data["memory_id"] = doc.id
+    memory_data["archived"] = doc.to_dict().get("archived", False)
+    return memory_data

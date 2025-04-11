@@ -5,16 +5,18 @@ import numpy as np
 from google.cloud import storage
 from pathlib import Path
 from app.config import settings
+from app.core.firebase import init_firebase
+from google.oauth2 import service_account
 
 
 def download_and_merge_chunks(user_id: str, memory_id: str, vad: bool = False, frame_rate=16000, byte_order='little') -> str:
     folder = "novad_chunks" if not vad else "audio_chunks"
     prefix = f"{user_id}/memory_data/{memory_id}/{folder}/"
 
-    storage_client = storage.Client()
-    bucket = storage_client.bucket(settings.GCP_BUCKET_NAME)
+    storage_client, bucket_name = right_storage_client_and_bucket(user_id, memory_id)
+    bucket = storage_client.bucket(bucket_name)
     blobs = list(bucket.list_blobs(prefix=prefix))
-
+    print(f"path is {bucket_name}://{prefix}")
     if not blobs:
         raise Exception(f"No audio chunks found in {prefix}")
 
@@ -91,3 +93,30 @@ def combine_wav_files(wav_files, output_path):
             with wave.open(wf, 'rb') as w:
                 out.writeframes(w.readframes(w.getnframes()))
 
+
+def get_gcs_client_for_created_at(created_at_ms: int) -> storage.Client:
+    """
+    Return GCS client based on created_at timestamp.
+    """
+    print(f"{created_at_ms=}, {settings.GCP_CUTOFF_TIMESTAMP_MS=}")
+    if created_at_ms > settings.GCP_CUTOFF_TIMESTAMP_MS:
+        print("old memory, fetching old creds")
+        creds_path = settings.GCP_CREDENTIALS_OLD
+        bucket_name = settings.GCP_BUCKET_NAME_OLD
+    else:
+        print("new memory, fetching new creds")
+        creds_path = settings.GCP_CREDENTIALS_NEW
+        bucket_name = settings.GCP_BUCKET_NAME_NEW
+
+    credentials = service_account.Credentials.from_service_account_file(str(creds_path))
+    return storage.Client(credentials=credentials, project=credentials.project_id), bucket_name
+
+def right_storage_client_and_bucket(user_id, memory_id):
+    db: Client = init_firebase()
+    doc = db.collection("users").document(user_id).collection("memories").document(memory_id).get()
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="Memory not found")
+    created_at = int(doc.to_dict().get("created_at", 0).timestamp() * 1000)
+    print(f"created at is {created_at}")
+    return get_gcs_client_for_created_at(created_at)
+    
