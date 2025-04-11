@@ -1,77 +1,110 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>User Insight</h2>
-<form id="insightForm">
-  <input type="text" name="user_id" placeholder="User ID" required />
-  <input type="text" name="memory_id" placeholder="(Optional) Memory ID" />
-  <input type="number" name="started_at" placeholder="(Optional) Started At Epoch" />
-  <input type="number" name="finished_at" placeholder="(Optional) Finished At Epoch" />
-  <button type="submit">Fetch</button>
-</form>
 
-<div class="mt-6">
+<div class="max-w-4xl mx-auto mt-10">
+  <h2 class="text-2xl font-bold mb-6 text-center">User Insight</h2>
+
+  <form id="insightForm" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+    <input type="text" name="user_id" placeholder="User ID" required class="border p-2 rounded w-full" />
+    <input type="text" name="memory_id" placeholder="(Optional) Memory ID" class="border p-2 rounded w-full" />
+    <input type="number" name="started_at" placeholder="(Optional) Started At (ms)" class="border p-2 rounded w-full" />
+    <input type="number" name="finished_at" placeholder="(Optional) Finished At (ms)" class="border p-2 rounded w-full" />
+    <input type="number" name="page" placeholder="Page (default 1)" value="1" class="border p-2 rounded w-full" />
+    <input type="number" name="page_size" placeholder="Page Size (default 10)" value="10" class="border p-2 rounded w-full" />
+    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 col-span-1 md:col-span-2">Fetch</button>
+  </form>
+
+  <div class="overflow-x-auto">
     <table class="w-full text-left border border-gray-300 rounded shadow">
       <thead class="bg-gray-100">
         <tr>
           <th class="p-2 border-b">Memory ID</th>
+          <th class="p-2 border-b">Created At</th>
           <th class="p-2 border-b">Started At</th>
           <th class="p-2 border-b">Finished At</th>
           <th class="p-2 border-b">Duration (sec)</th>
           <th class="p-2 border-b">Download</th>
         </tr>
       </thead>
-      <tbody id="results" class="bg-white">
-        <!-- JS will populate rows here -->
-      </tbody>
+      <tbody id="results" class="bg-white"></tbody>
     </table>
   </div>
-  
-  <script>
-  function formatEpoch(epoch) {
-    if (!epoch) return "-";
-    const d = new Date(Number(epoch));
-    return d.toLocaleString();
+
+  <div class="mt-6 flex justify-between">
+    <button id="prevBtn" class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400" disabled>Previous</button>
+    <button id="nextBtn" class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400" disabled>Next</button>
+  </div>
+</div>
+
+<script>
+let currentPage = 1;
+let lastParams = new URLSearchParams();
+
+function formatEpoch(epoch) {
+  if (!epoch) return "-";
+  const d = new Date(Number(epoch));
+  return d.toLocaleString();
+}
+
+async function fetchPage(page = 1) {
+  const params = new URLSearchParams(lastParams);
+  params.set("page", page);
+
+  const res = await fetch(`/user_insight/data?${params}`);
+  const data = await res.json();
+
+  const user_id = params.get("user_id");
+  currentPage = data.page;
+
+  document.querySelector("input[name='page']").value = currentPage;
+
+  const results = document.getElementById("results");
+  if (!data.memories || data.memories.length === 0) {
+    results.innerHTML = "<tr><td colspan='6' class='p-2 text-center text-gray-500'>No memories found.</td></tr>";
+    return;
   }
-  
-  document.getElementById("insightForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const form = new FormData(e.target);
-    const params = new URLSearchParams();
-  
-    for (const [key, value] of form.entries()) {
-      if (value.trim() !== "") {
-        params.append(key, value);
-      }
-    }
-  
-    const res = await fetch(`/user_insight/data?${params}`);
-    const data = await res.json();
-    const user_id = form.get("user_id");
-  
-    const rows = data.memories.map(m => {
-    const created = m.created_at || 0;
+
+  const rows = data.memories.map(m => {
     const started = m.started_at || 0;
     const finished = m.finished_at || 0;
     const duration = finished && started ? ((finished - started) / 1000).toFixed(1) : "-";
+    const memoryId = m.memory_id || m.id || "-";
+    const createdAt = m.created_at || 0;
 
     return `
-        <tr>
-        <td class="p-2 border-b">${m.memory_id || "-"}</td>
-        <td class="p-2 border-b">${formatEpoch(created)}</td>
+      <tr>
+        <td class="p-2 border-b">${memoryId}</td>
+        <td class="p-2 border-b">${formatEpoch(createdAt)}</td>
         <td class="p-2 border-b">${formatEpoch(started)}</td>
         <td class="p-2 border-b">${formatEpoch(finished)}</td>
         <td class="p-2 border-b">${duration}</td>
         <td class="p-2 border-b">
-            <a href="/user_insight/download_memory/${user_id}/${m.memory_id}" class="text-blue-600 hover:underline" target="_blank">Download JSON</a>
+          <a href="/user_insight/download_memory/${user_id}/${memoryId}" class="text-blue-600 hover:underline" target="_blank">Download JSON</a>
         </td>
-        </tr>
+      </tr>
     `;
-    });
-
-  
-    document.getElementById("results").innerHTML = rows.join("");
   });
-  </script>
-  
+
+  results.innerHTML = rows.join("");
+  document.getElementById("nextBtn").disabled = !data.has_next;
+  document.getElementById("prevBtn").disabled = !data.has_prev;
+}
+
+document.getElementById("insightForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const form = new FormData(e.target);
+  const params = new URLSearchParams();
+  for (const [key, value] of form.entries()) {
+    if (value.trim() !== "") params.append(key, value);
+  }
+  lastParams = new URLSearchParams(params);
+  currentPage = 1;
+  await fetchPage(currentPage);
+});
+
+document.getElementById("nextBtn").onclick = () => fetchPage(currentPage + 1);
+document.getElementById("prevBtn").onclick = () => fetchPage(currentPage - 1);
+</script>
+
 {% endblock %}
 
